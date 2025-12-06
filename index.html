@@ -7,6 +7,16 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <style>
+        /* Add spinner animation */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin-custom {
+            animation: spin 1s linear infinite;
+        }
+    </style>
 </head>
 <body class="bg-gradient-to-br from-purple-50 to-blue-50 min-h-screen">
     <div class="container mx-auto px-4 py-8 max-w-6xl">
@@ -47,17 +57,33 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                     </svg>
                     <span class="text-lg text-gray-600 font-medium">Click to upload X-ray image</span>
-                    <p class="text-sm text-gray-500 mt-2">PNG, JPG, or JPEG (Image will be automatically resized)</p>
+                    <p class="text-sm text-gray-500 mt-2">PNG, JPG, or JPEG (Image will be automatically resized to optimal size)</p>
                 </label>
             </div>
 
             <div id="imagePreview" class="mt-6 hidden">
+                <!-- Show image dimensions info after resizing -->
+                <div class="mb-4 text-center text-sm text-gray-600">
+                    <p>Image size: <span id="imageDimensions">Loading...</span></p>
+                </div>
                 <img id="uploadedImage" class="max-w-md mx-auto rounded-lg shadow-lg border-4 border-purple-200">
                 <button onclick="analyzeImage()" class="mt-6 bg-gradient-to-r from-green-500 to-teal-500 text-white px-8 py-3 rounded-lg font-semibold hover:from-green-600 hover:to-teal-600 transition shadow-lg block mx-auto">
                     Analyze X-Ray
                 </button>
             </div>
         </section>
+
+        <!-- Add loading spinner section -->
+        <div id="loadingSpinner" class="hidden bg-white rounded-2xl shadow-xl p-8 mb-8">
+            <div class="flex flex-col items-center justify-center">
+                <svg class="w-16 h-16 text-blue-600 animate-spin-custom mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <h3 class="text-xl font-semibold text-gray-800 mb-2">Analyzing X-Ray</h3>
+                <p class="text-gray-600">Processing image with AI model...</p>
+            </div>
+        </div>
 
           
         <section id="resultsSection" class="bg-white rounded-2xl shadow-xl p-8 mb-8 hidden">
@@ -154,7 +180,7 @@
             </div>
         </section>
 
-                <footer class="text-center mt-12 text-gray-600">
+        <footer class="text-center mt-12 text-gray-600">
             <p class="text-sm">© 2025 Pediatric Pneumonia Detection System | For Educational and Research Purposes</p>
             <p class="text-xs mt-2">Always consult with qualified healthcare professionals for medical advice</p>
         </footer>
@@ -220,7 +246,7 @@
             "Romania": "112"
         };
 
-        // <CHANGE> Load model automatically on page load from local files
+        // Load model automatically on page load from local files
         async function initModel() {
             try {
                 const modelURL = './model.json';
@@ -236,7 +262,7 @@
             }
         }
 
-        // <CHANGE> Initialize model when page loads
+        // Initialize model when page loads
         window.addEventListener('load', initModel);
 
         function showCountryList() {
@@ -304,24 +330,27 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 const img = new Image();
+                img.crossOrigin = "anonymous";
                 img.onload = function() {
-                    // Resize image
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
                     
-                    const maxSize = 800;
+                    // Set optimal size for medical imaging (768x768 for better model accuracy)
+                    const optimalSize = 768;
                     let width = img.width;
                     let height = img.height;
                     
+                    // Maintain aspect ratio while fitting to optimal size
+                    const aspectRatio = width / height;
                     if (width > height) {
-                        if (width > maxSize) {
-                            height *= maxSize / width;
-                            width = maxSize;
+                        if (width > optimalSize) {
+                            width = optimalSize;
+                            height = Math.round(optimalSize / aspectRatio);
                         }
                     } else {
-                        if (height > maxSize) {
-                            width *= maxSize / height;
-                            height = maxSize;
+                        if (height > optimalSize) {
+                            height = optimalSize;
+                            width = Math.round(optimalSize * aspectRatio);
                         }
                     }
                     
@@ -329,8 +358,11 @@
                     canvas.height = height;
                     ctx.drawImage(img, 0, 0, width, height);
                     
-                    const resizedImage = canvas.toDataURL('image/jpeg', 0.9);
+                    const resizedImage = canvas.toDataURL('image/jpeg', 0.95);
                     document.getElementById('uploadedImage').src = resizedImage;
+                    
+                    document.getElementById('imageDimensions').textContent = `${width}x${height}px (Original: ${img.width}x${img.height}px)`;
+                    
                     document.getElementById('imagePreview').classList.remove('hidden');
                 };
                 img.src = e.target.result;
@@ -344,15 +376,29 @@
                 return;
             }
 
-            const image = document.getElementById('uploadedImage');
-            const prediction = await model.predict(image);
-            
-            displayResults(prediction);
+            // Show loading spinner
+            document.getElementById('loadingSpinner').classList.remove('hidden');
+            document.getElementById('resultsSection').classList.add('hidden');
+            document.getElementById('predictions').innerHTML = '';
+
+            try {
+                const image = document.getElementById('uploadedImage');
+                const prediction = await model.predict(image);
+                displayResults(prediction);
+            } catch (error) {
+                console.error('Error during analysis:', error);
+                alert('Error analyzing image. Please try again.');
+                document.getElementById('loadingSpinner').classList.add('hidden');
+            }
         }
 
         function displayResults(predictions) {
             const resultsSection = document.getElementById('resultsSection');
             const predictionsDiv = document.getElementById('predictions');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            
+            // Hide loading spinner
+            loadingSpinner.classList.add('hidden');
             
             resultsSection.classList.remove('hidden');
             
