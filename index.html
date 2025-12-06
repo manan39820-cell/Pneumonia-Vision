@@ -406,13 +406,15 @@
             
             predictionsDiv.innerHTML = sortedPredictions.map(pred => {
                 const percentage = (pred.probability * 100).toFixed(2);
-                const barColor = pred.probability > 0.5 ? 'bg-red-500' : 'bg-blue-500';
+                const isPneumonia = pred.className.toLowerCase().includes('pneumonia');
+                const textColor = isPneumonia ? 'text-red-600' : 'text-blue-600';
+                const barColor = isPneumonia ? 'bg-red-500' : 'bg-blue-500';
                 
                 return `
                     <div class="space-y-2">
                         <div class="flex justify-between items-center">
                             <span class="font-semibold text-gray-800">${pred.className}</span>
-                            <span class="text-lg font-bold ${pred.probability > 0.5 ? 'text-red-600' : 'text-blue-600'}">${percentage}%</span>
+                            <span class="text-lg font-bold ${textColor}">${percentage}%</span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
                             <div class="${barColor} h-4 rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
