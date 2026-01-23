@@ -7,14 +7,26 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        /* Add spinner animation */
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+        .leaflet-popup-content-wrapper {
+            border-radius: 0.75rem;
         }
-        .animate-spin-custom {
-            animation: spin 1s linear infinite;
+        .popup-content h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #1f2937;
+        }
+        .popup-content p {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-bottom: 0.25rem;
+        }
+        .popup-content .phone {
+            color: #7c3aed;
+            font-weight: 600;
         }
     </style>
 </head>
@@ -27,7 +39,6 @@
                 <p class="text-purple-100 mt-2">AI-Powered Chest X-Ray Analysis</p>
             </div>
             
-              
             <div class="mt-6 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg max-w-3xl mx-auto">
                 <div class="flex items-start">
                     <svg class="w-6 h-6 text-yellow-600 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
@@ -41,7 +52,7 @@
             </div>
         </header>
 
-         
+        <!-- Upload Section -->
         <section class="bg-white rounded-2xl shadow-xl p-8 mb-8">
             <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
                 <svg class="w-7 h-7 mr-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -57,15 +68,11 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                     </svg>
                     <span class="text-lg text-gray-600 font-medium">Click to upload X-ray image</span>
-                    <p class="text-sm text-gray-500 mt-2">PNG, JPG, or JPEG (Image will be automatically resized to optimal size)</p>
+                    <p class="text-sm text-gray-500 mt-2">PNG, JPG, or JPEG (Image will be automatically resized)</p>
                 </label>
             </div>
 
             <div id="imagePreview" class="mt-6 hidden">
-                <!-- Show image dimensions info after resizing -->
-                <div class="mb-4 text-center text-sm text-gray-600">
-                    <p>Image size: <span id="imageDimensions">Loading...</span></p>
-                </div>
                 <img id="uploadedImage" class="max-w-md mx-auto rounded-lg shadow-lg border-4 border-purple-200">
                 <button onclick="analyzeImage()" class="mt-6 bg-gradient-to-r from-green-500 to-teal-500 text-white px-8 py-3 rounded-lg font-semibold hover:from-green-600 hover:to-teal-600 transition shadow-lg block mx-auto">
                     Analyze X-Ray
@@ -73,19 +80,7 @@
             </div>
         </section>
 
-        <!-- Add loading spinner section -->
-        <div id="loadingSpinner" class="hidden bg-white rounded-2xl shadow-xl p-8 mb-8">
-            <div class="flex flex-col items-center justify-center">
-                <svg class="w-16 h-16 text-blue-600 animate-spin-custom mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <h3 class="text-xl font-semibold text-gray-800 mb-2">Analyzing X-Ray</h3>
-                <p class="text-gray-600">Processing image with AI model...</p>
-            </div>
-        </div>
-
-          
+        <!-- Results Section -->
         <section id="resultsSection" class="bg-white rounded-2xl shadow-xl p-8 mb-8 hidden">
             <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
                 <svg class="w-7 h-7 mr-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -99,7 +94,7 @@
             </div>
         </section>
 
-          
+        <!-- About Pneumonia Section -->
         <section class="bg-white rounded-2xl shadow-xl p-8 mb-8">
             <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
                 <svg class="w-7 h-7 mr-3 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -132,21 +127,22 @@
                 </ul>
 
                 <div class="mt-6 p-4 bg-red-50 rounded-lg border-l-4 border-red-500">
-                    <p class="text-red-800 font-medium">⚠️ Seek immediate medical attention if your child shows signs of severe breathing difficulty, persistent high fever, or bluish discoloration of the skin.</p>
+                    <p class="text-red-800 font-medium">Seek immediate medical attention if your child shows signs of severe breathing difficulty, persistent high fever, or bluish discoloration of the skin.</p>
                 </div>
             </div>
         </section>
 
-         
+        <!-- Emergency Contacts Section -->
         <section class="bg-white rounded-2xl shadow-xl p-8">
             <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
                 <svg class="w-7 h-7 mr-3 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
                 </svg>
-                Emergency Contacts
+                Emergency Contacts & Nearby Hospitals
             </h2>
             
             <div class="space-y-4">
+                <!-- Country Search -->
                 <div class="relative">
                     <label class="block text-gray-700 font-medium mb-2">Search for your country</label>
                     <input 
@@ -158,13 +154,11 @@
                         onfocus="showCountryList()"
                     >
                     
-                    
                     <div id="countryList" class="hidden absolute z-10 w-full mt-2 bg-white border-2 border-gray-300 rounded-lg shadow-lg max-h-64 overflow-y-auto">
-                         Countries will be populated here 
                     </div>
                 </div>
                 
-                  
+                <!-- Emergency Info Display -->
                 <div id="emergencyInfo" class="hidden mt-6 p-6 bg-gradient-to-r from-red-50 to-orange-50 rounded-lg border-2 border-red-200">
                     <div class="flex items-start">
                         <svg class="w-8 h-8 text-red-600 mr-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -174,79 +168,384 @@
                             <h3 id="selectedCountry" class="text-xl font-bold text-gray-800 mb-2"></h3>
                             <p class="text-gray-700 mb-2">Emergency Number:</p>
                             <p id="emergencyNumber" class="text-3xl font-bold text-red-600"></p>
+                            <a id="callEmergency" href="tel:" class="inline-flex items-center mt-3 bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                                </svg>
+                                Call Emergency
+                            </a>
                         </div>
                     </div>
+                </div>
+
+                <!-- City Selection -->
+                <div id="citySelectionContainer" class="hidden mt-6">
+                    <label class="block text-gray-700 font-medium mb-2">Select your city/area</label>
+                    <select 
+                        id="citySelect" 
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none transition bg-white"
+                        onchange="selectCity()"
+                    >
+                        <option value="">-- Select a city --</option>
+                    </select>
+                </div>
+
+                <!-- Map Section -->
+                <div id="mapSection" class="hidden mt-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                        <h3 class="text-lg font-semibold text-gray-800">Nearby Hospitals</h3>
+                        <button 
+                            id="useLocationBtn"
+                            onclick="useMyLocation()" 
+                            class="inline-flex items-center bg-gradient-to-r from-purple-500 to-blue-500 text-white px-4 py-2 rounded-lg font-semibold hover:from-purple-600 hover:to-blue-600 transition"
+                        >
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            Use My Location
+                        </button>
+                    </div>
+                    
+                    <div id="hospitalMap" class="h-96 rounded-xl border-2 border-gray-200 shadow-lg" style="z-index: 1;"></div>
+                    
+                    <!-- Hospital List -->
+                    <div id="hospitalList" class="mt-6 space-y-3"></div>
                 </div>
             </div>
         </section>
 
         <footer class="text-center mt-12 text-gray-600">
-            <p class="text-sm">© 2025 Pediatric Pneumonia Detection System | For Educational and Research Purposes</p>
+            <p class="text-sm">2025 Pediatric Pneumonia Detection System | For Educational and Research Purposes</p>
             <p class="text-xs mt-2">Always consult with qualified healthcare professionals for medical advice</p>
         </footer>
     </div>
 
     <script>
         let model, maxPredictions;
+        let map = null;
+        let userLocation = null;
+        let markers = [];
 
-        // Emergency contacts database
-        const emergencyContacts = {
-            "United States": "911",
-            "United Kingdom": "999",
-            "Canada": "911",
-            "Australia": "000",
-            "India": "112",
-            "Germany": "112",
-            "France": "112",
-            "Italy": "112",
-            "Spain": "112",
-            "Japan": "119",
-            "China": "120",
-            "South Korea": "119",
-            "Brazil": "192",
-            "Mexico": "911",
-            "Russia": "103",
-            "South Africa": "10177",
-            "Nigeria": "112",
-            "Egypt": "123",
-            "Pakistan": "115",
-            "Bangladesh": "999",
-            "Indonesia": "118",
-            "Philippines": "911",
-            "Vietnam": "115",
-            "Thailand": "1669",
-            "Malaysia": "999",
-            "Singapore": "995",
-            "New Zealand": "111",
-            "Argentina": "107",
-            "Chile": "131",
-            "Colombia": "123",
-            "Peru": "116",
-            "Venezuela": "171",
-            "Saudi Arabia": "997",
-            "UAE": "998",
-            "Turkey": "112",
-            "Iran": "115",
-            "Iraq": "122",
-            "Israel": "101",
-            "Poland": "112",
-            "Ukraine": "103",
-            "Netherlands": "112",
-            "Belgium": "112",
-            "Sweden": "112",
-            "Norway": "113",
-            "Denmark": "112",
-            "Finland": "112",
-            "Switzerland": "144",
-            "Austria": "144",
-            "Greece": "166",
-            "Portugal": "112",
-            "Czech Republic": "112",
-            "Hungary": "112",
-            "Romania": "112"
+        // Hospital Data by Country and City
+        const hospitalData = {
+            "United States": {
+                flag: "us",
+                emergencyNumber: "911",
+                cities: {
+                    "New York": {
+                        center: [40.7128, -74.0060],
+                        hospitals: [
+                            { name: "NewYork-Presbyterian Children's Hospital", lat: 40.7410, lng: -73.9420, type: "Children's", address: "3959 Broadway, New York, NY", phone: "(212) 305-5437" },
+                            { name: "Mount Sinai Kravis Children's Hospital", lat: 40.7900, lng: -73.9526, type: "Children's", address: "1 Gustave L. Levy Place, New York, NY", phone: "(212) 241-6500" },
+                            { name: "NYU Langone Hassenfeld Children's Hospital", lat: 40.7421, lng: -73.9738, type: "Children's", address: "550 1st Avenue, New York, NY", phone: "(212) 263-5940" },
+                            { name: "Bellevue Hospital Center", lat: 40.7392, lng: -73.9750, type: "Emergency", address: "462 1st Avenue, New York, NY", phone: "(212) 562-4141" }
+                        ]
+                    },
+                    "Los Angeles": {
+                        center: [34.0522, -118.2437],
+                        hospitals: [
+                            { name: "Children's Hospital Los Angeles", lat: 34.0971, lng: -118.2884, type: "Children's", address: "4650 Sunset Blvd, Los Angeles, CA", phone: "(323) 660-2450" },
+                            { name: "UCLA Mattel Children's Hospital", lat: 34.0665, lng: -118.4451, type: "Children's", address: "757 Westwood Plaza, Los Angeles, CA", phone: "(310) 825-9111" },
+                            { name: "Cedars-Sinai Medical Center", lat: 34.0751, lng: -118.3802, type: "General", address: "8700 Beverly Blvd, Los Angeles, CA", phone: "(310) 423-3277" }
+                        ]
+                    },
+                    "Chicago": {
+                        center: [41.8781, -87.6298],
+                        hospitals: [
+                            { name: "Lurie Children's Hospital", lat: 41.8962, lng: -87.6193, type: "Children's", address: "225 E Chicago Ave, Chicago, IL", phone: "(312) 227-4000" },
+                            { name: "Comer Children's Hospital", lat: 41.7874, lng: -87.6042, type: "Children's", address: "5721 S Maryland Ave, Chicago, IL", phone: "(773) 702-1000" },
+                            { name: "Northwestern Memorial Hospital", lat: 41.8955, lng: -87.6206, type: "General", address: "251 E Huron St, Chicago, IL", phone: "(312) 926-2000" }
+                        ]
+                    },
+                    "Houston": {
+                        center: [29.7604, -95.3698],
+                        hospitals: [
+                            { name: "Texas Children's Hospital", lat: 29.7080, lng: -95.4004, type: "Children's", address: "6621 Fannin St, Houston, TX", phone: "(832) 824-1000" },
+                            { name: "Memorial Hermann Children's Hospital", lat: 29.7105, lng: -95.3977, type: "Children's", address: "6411 Fannin St, Houston, TX", phone: "(713) 704-4000" },
+                            { name: "Houston Methodist Hospital", lat: 29.7105, lng: -95.3999, type: "General", address: "6565 Fannin St, Houston, TX", phone: "(713) 790-3311" }
+                        ]
+                    }
+                }
+            },
+            "United Kingdom": {
+                flag: "gb",
+                emergencyNumber: "999",
+                cities: {
+                    "London": {
+                        center: [51.5074, -0.1278],
+                        hospitals: [
+                            { name: "Great Ormond Street Hospital", lat: 51.5227, lng: -0.1200, type: "Children's", address: "Great Ormond St, London WC1N 3JH", phone: "020 7405 9200" },
+                            { name: "Evelina London Children's Hospital", lat: 51.4994, lng: -0.1174, type: "Children's", address: "Westminster Bridge Rd, London SE1 7EH", phone: "020 7188 7188" },
+                            { name: "Royal London Hospital", lat: 51.5185, lng: -0.0594, type: "Emergency", address: "Whitechapel Rd, London E1 1FR", phone: "020 7377 7000" }
+                        ]
+                    },
+                    "Manchester": {
+                        center: [53.4808, -2.2426],
+                        hospitals: [
+                            { name: "Royal Manchester Children's Hospital", lat: 53.4631, lng: -2.2261, type: "Children's", address: "Oxford Rd, Manchester M13 9WL", phone: "0161 276 1234" },
+                            { name: "Manchester Royal Infirmary", lat: 53.4620, lng: -2.2278, type: "General", address: "Oxford Rd, Manchester M13 9WL", phone: "0161 276 1234" }
+                        ]
+                    },
+                    "Birmingham": {
+                        center: [52.4862, -1.8904],
+                        hospitals: [
+                            { name: "Birmingham Children's Hospital", lat: 52.4856, lng: -1.8911, type: "Children's", address: "Steelhouse Lane, Birmingham B4 6NH", phone: "0121 333 9999" },
+                            { name: "Queen Elizabeth Hospital", lat: 52.4534, lng: -1.9385, type: "General", address: "Mindelsohn Way, Birmingham B15 2GW", phone: "0121 627 2000" }
+                        ]
+                    }
+                }
+            },
+            "Canada": {
+                flag: "ca",
+                emergencyNumber: "911",
+                cities: {
+                    "Toronto": {
+                        center: [43.6532, -79.3832],
+                        hospitals: [
+                            { name: "The Hospital for Sick Children", lat: 43.6574, lng: -79.3870, type: "Children's", address: "555 University Ave, Toronto, ON", phone: "(416) 813-1500" },
+                            { name: "Toronto General Hospital", lat: 43.6594, lng: -79.3887, type: "General", address: "200 Elizabeth St, Toronto, ON", phone: "(416) 340-4800" },
+                            { name: "St. Michael's Hospital", lat: 43.6532, lng: -79.3772, type: "Emergency", address: "30 Bond St, Toronto, ON", phone: "(416) 360-4000" }
+                        ]
+                    },
+                    "Montreal": {
+                        center: [45.5017, -73.5673],
+                        hospitals: [
+                            { name: "Montreal Children's Hospital", lat: 45.4742, lng: -73.6012, type: "Children's", address: "1001 Decarie Blvd, Montreal, QC", phone: "(514) 412-4400" },
+                            { name: "CHU Sainte-Justine", lat: 45.5020, lng: -73.6227, type: "Children's", address: "3175 Chemin de la Cote-Sainte-Catherine, Montreal, QC", phone: "(514) 345-4931" }
+                        ]
+                    },
+                    "Vancouver": {
+                        center: [49.2827, -123.1207],
+                        hospitals: [
+                            { name: "BC Children's Hospital", lat: 49.2451, lng: -123.1236, type: "Children's", address: "4480 Oak St, Vancouver, BC", phone: "(604) 875-2345" },
+                            { name: "Vancouver General Hospital", lat: 49.2621, lng: -123.1222, type: "General", address: "899 W 12th Ave, Vancouver, BC", phone: "(604) 875-4111" }
+                        ]
+                    }
+                }
+            },
+            "Australia": {
+                flag: "au",
+                emergencyNumber: "000",
+                cities: {
+                    "Sydney": {
+                        center: [-33.8688, 151.2093],
+                        hospitals: [
+                            { name: "The Children's Hospital at Westmead", lat: -33.8025, lng: 150.9882, type: "Children's", address: "Hawkesbury Rd, Westmead NSW 2145", phone: "(02) 9845 0000" },
+                            { name: "Sydney Children's Hospital", lat: -33.9181, lng: 151.2411, type: "Children's", address: "High St, Randwick NSW 2031", phone: "(02) 9382 1111" },
+                            { name: "Royal Prince Alfred Hospital", lat: -33.8894, lng: 151.1809, type: "General", address: "50 Missenden Rd, Camperdown NSW 2050", phone: "(02) 9515 6111" }
+                        ]
+                    },
+                    "Melbourne": {
+                        center: [-37.8136, 144.9631],
+                        hospitals: [
+                            { name: "Royal Children's Hospital", lat: -37.7937, lng: 144.9495, type: "Children's", address: "50 Flemington Rd, Parkville VIC 3052", phone: "(03) 9345 5522" },
+                            { name: "Monash Children's Hospital", lat: -37.9206, lng: 145.1220, type: "Children's", address: "246 Clayton Rd, Clayton VIC 3168", phone: "(03) 8572 3000" }
+                        ]
+                    },
+                    "Brisbane": {
+                        center: [-27.4698, 153.0251],
+                        hospitals: [
+                            { name: "Queensland Children's Hospital", lat: -27.4841, lng: 153.0128, type: "Children's", address: "501 Stanley St, South Brisbane QLD 4101", phone: "(07) 3068 1111" },
+                            { name: "Royal Brisbane and Women's Hospital", lat: -27.4489, lng: 153.0278, type: "General", address: "Butterfield St, Herston QLD 4029", phone: "(07) 3646 8111" }
+                        ]
+                    }
+                }
+            },
+            "India": {
+                flag: "in",
+                emergencyNumber: "112",
+                cities: {
+                    "Mumbai": {
+                        center: [19.0760, 72.8777],
+                        hospitals: [
+                            { name: "Bai Jerbai Wadia Hospital for Children", lat: 18.9869, lng: 72.8314, type: "Children's", address: "Acharya Donde Marg, Parel, Mumbai", phone: "022 2416 9561" },
+                            { name: "Kokilaben Dhirubhai Ambani Hospital", lat: 19.1311, lng: 72.8264, type: "General", address: "Rao Saheb Achutrao Patwardhan Marg, Mumbai", phone: "022 3066 6666" },
+                            { name: "Lilavati Hospital", lat: 19.0509, lng: 72.8288, type: "General", address: "A-791, Bandra Reclamation, Mumbai", phone: "022 2640 7655" }
+                        ]
+                    },
+                    "Delhi": {
+                        center: [28.6139, 77.2090],
+                        hospitals: [
+                            { name: "All India Institute of Medical Sciences", lat: 28.5672, lng: 77.2100, type: "General", address: "Sri Aurobindo Marg, Ansari Nagar, New Delhi", phone: "011 2658 8500" },
+                            { name: "Sir Ganga Ram Hospital", lat: 28.6385, lng: 77.1913, type: "General", address: "Rajinder Nagar, New Delhi", phone: "011 2575 0000" },
+                            { name: "Safdarjung Hospital", lat: 28.5685, lng: 77.2066, type: "General", address: "Ring Road, Safdarjung, New Delhi", phone: "011 2673 0000" }
+                        ]
+                    },
+                    "Bangalore": {
+                        center: [12.9716, 77.5946],
+                        hospitals: [
+                            { name: "Indira Gandhi Institute of Child Health", lat: 12.9600, lng: 77.5760, type: "Children's", address: "South Hospital Complex, Bangalore", phone: "080 2659 5452" },
+                            { name: "Manipal Hospital", lat: 12.9582, lng: 77.6478, type: "General", address: "98, HAL Airport Road, Bangalore", phone: "080 2502 4444" },
+                            { name: "Narayana Health", lat: 12.8827, lng: 77.5987, type: "General", address: "258/A, Bommasandra Industrial Area, Bangalore", phone: "080 7122 2222" }
+                        ]
+                    },
+                    "Chennai": {
+                        center: [13.0827, 80.2707],
+                        hospitals: [
+                            { name: "Institute of Child Health and Hospital for Children", lat: 13.0755, lng: 80.2794, type: "Children's", address: "Halls Road, Egmore, Chennai", phone: "044 2819 1902" },
+                            { name: "Apollo Children's Hospital", lat: 13.0604, lng: 80.2496, type: "Children's", address: "15, Shafee Mohammed Rd, Chennai", phone: "044 2829 0200" }
+                        ]
+                    }
+                }
+            },
+            "Germany": {
+                flag: "de",
+                emergencyNumber: "112",
+                cities: {
+                    "Berlin": {
+                        center: [52.5200, 13.4050],
+                        hospitals: [
+                            { name: "Charite - Universitatsmedizin Berlin", lat: 52.5254, lng: 13.3783, type: "General", address: "Chariteplatz 1, 10117 Berlin", phone: "+49 30 450 50" },
+                            { name: "DRK Kliniken Berlin Westend", lat: 52.5165, lng: 13.2624, type: "General", address: "Spandauer Damm 130, 14050 Berlin", phone: "+49 30 3035 0" }
+                        ]
+                    },
+                    "Munich": {
+                        center: [48.1351, 11.5820],
+                        hospitals: [
+                            { name: "Dr. von Haunersches Kinderspital", lat: 48.1367, lng: 11.5651, type: "Children's", address: "Lindwurmstrasse 4, 80337 Munich", phone: "+49 89 4400 0" },
+                            { name: "Klinikum der Universitat Munchen", lat: 48.1115, lng: 11.4706, type: "General", address: "Marchioninistrasse 15, 81377 Munich", phone: "+49 89 4400 0" }
+                        ]
+                    },
+                    "Hamburg": {
+                        center: [53.5511, 9.9937],
+                        hospitals: [
+                            { name: "Universitatsklinikum Hamburg-Eppendorf", lat: 53.5908, lng: 9.9760, type: "General", address: "Martinistrasse 52, 20246 Hamburg", phone: "+49 40 7410 0" },
+                            { name: "Altonaer Kinderkrankenhaus", lat: 53.5511, lng: 9.9200, type: "Children's", address: "Bleickenallee 38, 22763 Hamburg", phone: "+49 40 88908 0" }
+                        ]
+                    }
+                }
+            },
+            "France": {
+                flag: "fr",
+                emergencyNumber: "15",
+                cities: {
+                    "Paris": {
+                        center: [48.8566, 2.3522],
+                        hospitals: [
+                            { name: "Hopital Necker-Enfants Malades", lat: 48.8468, lng: 2.3148, type: "Children's", address: "149 Rue de Sevres, 75015 Paris", phone: "+33 1 44 49 40 00" },
+                            { name: "Hopital Robert-Debre", lat: 48.8795, lng: 2.3994, type: "Children's", address: "48 Boulevard Serurier, 75019 Paris", phone: "+33 1 40 03 20 00" },
+                            { name: "Hopital Trousseau", lat: 48.8469, lng: 2.3991, type: "Children's", address: "26 Avenue du Dr Arnold-Netter, 75012 Paris", phone: "+33 1 44 73 74 75" }
+                        ]
+                    },
+                    "Lyon": {
+                        center: [45.7640, 4.8357],
+                        hospitals: [
+                            { name: "Hopital Femme Mere Enfant", lat: 45.7410, lng: 4.8966, type: "Children's", address: "59 Boulevard Pinel, 69677 Bron", phone: "+33 4 27 85 50 00" }
+                        ]
+                    },
+                    "Marseille": {
+                        center: [43.2965, 5.3698],
+                        hospitals: [
+                            { name: "Hopital de la Timone Enfants", lat: 43.2887, lng: 5.4038, type: "Children's", address: "264 Rue Saint-Pierre, 13005 Marseille", phone: "+33 4 91 38 60 00" }
+                        ]
+                    }
+                }
+            },
+            "Japan": {
+                flag: "jp",
+                emergencyNumber: "119",
+                cities: {
+                    "Tokyo": {
+                        center: [35.6762, 139.6503],
+                        hospitals: [
+                            { name: "National Center for Child Health and Development", lat: 35.6276, lng: 139.6776, type: "Children's", address: "2-10-1 Okura, Setagaya-ku, Tokyo", phone: "+81 3 3416 0181" },
+                            { name: "Tokyo Metropolitan Children's Medical Center", lat: 35.7268, lng: 139.4842, type: "Children's", address: "2-8-29 Musashidai, Fuchu, Tokyo", phone: "+81 42 300 5111" }
+                        ]
+                    },
+                    "Osaka": {
+                        center: [34.6937, 135.5023],
+                        hospitals: [
+                            { name: "Osaka City General Hospital", lat: 34.6817, lng: 135.5099, type: "General", address: "2-13-22 Miyakojimahondori, Miyakojima-ku, Osaka", phone: "+81 6 6929 1221" }
+                        ]
+                    },
+                    "Kyoto": {
+                        center: [35.0116, 135.7681],
+                        hospitals: [
+                            { name: "Kyoto University Hospital", lat: 35.0217, lng: 135.7756, type: "General", address: "54 Shogoin Kawahara-cho, Sakyo-ku, Kyoto", phone: "+81 75 751 3111" }
+                        ]
+                    }
+                }
+            },
+            "South Africa": {
+                flag: "za",
+                emergencyNumber: "10177",
+                cities: {
+                    "Johannesburg": {
+                        center: [-26.2041, 28.0473],
+                        hospitals: [
+                            { name: "Charlotte Maxeke Johannesburg Academic Hospital", lat: -26.1748, lng: 28.0386, type: "General", address: "Jubilee Rd, Parktown, Johannesburg", phone: "+27 11 488 4911" },
+                            { name: "Nelson Mandela Children's Hospital", lat: -26.1754, lng: 28.0394, type: "Children's", address: "6 Jubilee Rd, Parktown, Johannesburg", phone: "+27 10 140 4000" }
+                        ]
+                    },
+                    "Cape Town": {
+                        center: [-33.9249, 18.4241],
+                        hospitals: [
+                            { name: "Red Cross War Memorial Children's Hospital", lat: -33.9434, lng: 18.4631, type: "Children's", address: "Klipfontein Rd, Rondebosch, Cape Town", phone: "+27 21 658 5111" },
+                            { name: "Groote Schuur Hospital", lat: -33.9413, lng: 18.4622, type: "General", address: "Main Rd, Observatory, Cape Town", phone: "+27 21 404 9111" }
+                        ]
+                    }
+                }
+            },
+            "Brazil": {
+                flag: "br",
+                emergencyNumber: "192",
+                cities: {
+                    "Sao Paulo": {
+                        center: [-23.5505, -46.6333],
+                        hospitals: [
+                            { name: "Hospital das Clinicas", lat: -23.5562, lng: -46.6696, type: "General", address: "Av. Dr. Eneas Carvalho de Aguiar, 255, Sao Paulo", phone: "+55 11 2661 0000" },
+                            { name: "Hospital Infantil Sabara", lat: -23.5734, lng: -46.6670, type: "Children's", address: "Av. Angélica, 1987, Sao Paulo", phone: "+55 11 3155 2800" }
+                        ]
+                    },
+                    "Rio de Janeiro": {
+                        center: [-22.9068, -43.1729],
+                        hospitals: [
+                            { name: "Instituto Nacional de Saude da Mulher", lat: -22.8754, lng: -43.2515, type: "Children's", address: "Av. Rui Barbosa, 716, Rio de Janeiro", phone: "+55 21 2554 1700" }
+                        ]
+                    }
+                }
+            },
+            "Singapore": {
+                flag: "sg",
+                emergencyNumber: "995",
+                cities: {
+                    "Singapore": {
+                        center: [1.3521, 103.8198],
+                        hospitals: [
+                            { name: "KK Women's and Children's Hospital", lat: 1.3106, lng: 103.8456, type: "Children's", address: "100 Bukit Timah Rd, Singapore", phone: "+65 6225 5554" },
+                            { name: "National University Hospital", lat: 1.2938, lng: 103.7831, type: "General", address: "5 Lower Kent Ridge Rd, Singapore", phone: "+65 6779 5555" },
+                            { name: "Singapore General Hospital", lat: 1.2799, lng: 103.8355, type: "General", address: "Outram Rd, Singapore", phone: "+65 6222 3322" }
+                        ]
+                    }
+                }
+            },
+            "UAE": {
+                flag: "ae",
+                emergencyNumber: "998",
+                cities: {
+                    "Dubai": {
+                        center: [25.2048, 55.2708],
+                        hospitals: [
+                            { name: "Al Jalila Children's Specialty Hospital", lat: 25.2377, lng: 55.3200, type: "Children's", address: "Al Jaddaf, Dubai", phone: "+971 4 220 8888" },
+                            { name: "Dubai Hospital", lat: 25.2880, lng: 55.3136, type: "General", address: "Al Baraha, Dubai", phone: "+971 4 219 5000" }
+                        ]
+                    },
+                    "Abu Dhabi": {
+                        center: [24.4539, 54.3773],
+                        hospitals: [
+                            { name: "Sheikh Khalifa Medical City", lat: 24.4652, lng: 54.3667, type: "General", address: "Al Karamah St, Abu Dhabi", phone: "+971 2 819 0000" },
+                            { name: "Cleveland Clinic Abu Dhabi", lat: 24.4164, lng: 54.4351, type: "General", address: "Al Maryah Island, Abu Dhabi", phone: "+971 2 501 9000" }
+                        ]
+                    }
+                }
+            }
         };
 
-        // Load model automatically on page load from local files
+        let selectedCountryData = null;
+        let selectedCityData = null;
+
+        // Load model automatically
         async function initModel() {
             try {
                 const modelURL = './model.json';
@@ -258,21 +557,15 @@
                 console.log('Model loaded successfully from local files');
             } catch (error) {
                 console.error('Error loading model:', error);
-                alert('Error loading AI model. Please ensure model.json, metadata.json, and weights.bin are in the same folder as this HTML file.');
             }
         }
 
-        // Initialize model when page loads
         window.addEventListener('load', initModel);
 
         function showCountryList() {
-            const listDiv = document.getElementById('countryList');
-            const searchInput = document.getElementById('countrySearch');
-            
-            if (searchInput.value.trim() === '') {
-                listDiv.classList.add('hidden');
-            } else {
-                listDiv.classList.remove('hidden');
+            const searchTerm = document.getElementById('countrySearch').value.toLowerCase();
+            if (searchTerm.trim() !== '') {
+                filterCountries();
             }
         }
 
@@ -285,7 +578,7 @@
                 return;
             }
             
-            const filteredCountries = Object.keys(emergencyContacts).filter(country => 
+            const filteredCountries = Object.keys(hospitalData).filter(country => 
                 country.toLowerCase().includes(searchTerm)
             );
             
@@ -305,15 +598,237 @@
         }
 
         function selectCountry(country) {
-            const emergencyNumber = emergencyContacts[country];
+            selectedCountryData = hospitalData[country];
+            const emergencyNumber = selectedCountryData.emergencyNumber;
             
             document.getElementById('selectedCountry').textContent = country;
             document.getElementById('emergencyNumber').textContent = emergencyNumber;
+            document.getElementById('callEmergency').href = 'tel:' + emergencyNumber;
             document.getElementById('emergencyInfo').classList.remove('hidden');
             document.getElementById('countrySearch').value = country;
             document.getElementById('countryList').classList.add('hidden');
+            
+            // Populate city dropdown
+            const citySelect = document.getElementById('citySelect');
+            citySelect.innerHTML = '<option value="">-- Select a city --</option>';
+            
+            Object.keys(selectedCountryData.cities).forEach(city => {
+                const option = document.createElement('option');
+                option.value = city;
+                option.textContent = city;
+                citySelect.appendChild(option);
+            });
+            
+            document.getElementById('citySelectionContainer').classList.remove('hidden');
+            document.getElementById('mapSection').classList.add('hidden');
         }
 
+        function selectCity() {
+            const citySelect = document.getElementById('citySelect');
+            const selectedCity = citySelect.value;
+            
+            if (!selectedCity || !selectedCountryData) return;
+            
+            selectedCityData = selectedCountryData.cities[selectedCity];
+            document.getElementById('mapSection').classList.remove('hidden');
+            
+            // Initialize or update map
+            initMap(selectedCityData);
+        }
+
+        function initMap(cityData) {
+            // Clear existing map if any
+            if (map) {
+                map.remove();
+            }
+            
+            // Clear markers array
+            markers = [];
+            
+            // Initialize map
+            map = L.map('hospitalMap').setView(cityData.center, 12);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+            
+            // Add hospital markers
+            addHospitalMarkers(cityData.hospitals);
+        }
+
+        function addHospitalMarkers(hospitals) {
+            const hospitalListDiv = document.getElementById('hospitalList');
+            hospitalListDiv.innerHTML = '';
+            
+            // Calculate distances if user location is available
+            let hospitalsWithDistance = hospitals.map(hospital => {
+                let distance = null;
+                if (userLocation) {
+                    distance = calculateDistance(
+                        userLocation.lat, userLocation.lng,
+                        hospital.lat, hospital.lng
+                    );
+                }
+                return { ...hospital, distance };
+            });
+            
+            // Sort by distance if available
+            if (userLocation) {
+                hospitalsWithDistance.sort((a, b) => a.distance - b.distance);
+            }
+            
+            hospitalsWithDistance.forEach((hospital, index) => {
+                const isNearest = userLocation && index === 0;
+                
+                // Create custom icon
+                const iconColor = isNearest ? '#22c55e' : '#ef4444';
+                const icon = L.divIcon({
+                    className: 'custom-marker',
+                    html: `<div style="background-color: ${iconColor}; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z"/>
+                        </svg>
+                    </div>`,
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 15]
+                });
+                
+                const marker = L.marker([hospital.lat, hospital.lng], { icon })
+                    .addTo(map)
+                    .bindPopup(`
+                        <div class="popup-content">
+                            <h4>${hospital.name}</h4>
+                            <p><strong>Type:</strong> ${hospital.type}</p>
+                            <p>${hospital.address}</p>
+                            <p class="phone">${hospital.phone}</p>
+                            ${hospital.distance ? `<p><strong>Distance:</strong> ${hospital.distance.toFixed(1)} km</p>` : ''}
+                        </div>
+                    `);
+                
+                markers.push(marker);
+                
+                // Add to list
+                const badgeClass = hospital.type === "Children's" ? 'bg-blue-100 text-blue-800' : 
+                                   hospital.type === "Emergency" ? 'bg-red-100 text-red-800' : 
+                                   'bg-purple-100 text-purple-800';
+                
+                hospitalListDiv.innerHTML += `
+                    <div class="p-4 rounded-lg border-2 ${isNearest ? 'border-green-400 bg-green-50' : 'border-gray-200 bg-white'}">
+                        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                            <div>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <h4 class="font-semibold text-gray-800">${hospital.name}</h4>
+                                    ${isNearest ? '<span class="px-2 py-0.5 bg-green-100 text-green-800 text-xs font-semibold rounded-full">Nearest</span>' : ''}
+                                </div>
+                                <span class="inline-block px-2 py-0.5 ${badgeClass} text-xs font-semibold rounded-full mb-2">${hospital.type}</span>
+                                <p class="text-sm text-gray-600">${hospital.address}</p>
+                                <p class="text-sm font-medium text-purple-600">${hospital.phone}</p>
+                            </div>
+                            ${hospital.distance ? `
+                                <div class="text-right">
+                                    <p class="text-2xl font-bold text-purple-600">${hospital.distance.toFixed(1)}</p>
+                                    <p class="text-xs text-gray-500">km away</p>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // Fit map bounds to show all markers
+            if (markers.length > 0) {
+                const group = L.featureGroup(markers);
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
+        }
+
+        function useMyLocation() {
+            const btn = document.getElementById('useLocationBtn');
+            btn.innerHTML = `
+                <svg class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Getting Location...
+            `;
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        userLocation = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+                        
+                        // Add user marker
+                        const userIcon = L.divIcon({
+                            className: 'custom-marker',
+                            html: `<div style="background-color: #3b82f6; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+                            iconSize: [20, 20],
+                            iconAnchor: [10, 10]
+                        });
+                        
+                        L.marker([userLocation.lat, userLocation.lng], { icon: userIcon })
+                            .addTo(map)
+                            .bindPopup('<strong>Your Location</strong>');
+                        
+                        // Refresh hospital markers with distances
+                        if (selectedCityData) {
+                            addHospitalMarkers(selectedCityData.hospitals);
+                        }
+                        
+                        btn.innerHTML = `
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            Location Found
+                        `;
+                        
+                        setTimeout(() => {
+                            btn.innerHTML = `
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                                Use My Location
+                            `;
+                        }, 2000);
+                    },
+                    (error) => {
+                        alert('Unable to get your location. Please check your browser permissions.');
+                        btn.innerHTML = `
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            Use My Location
+                        `;
+                    }
+                );
+            } else {
+                alert('Geolocation is not supported by your browser.');
+                btn.innerHTML = `
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    Use My Location
+                `;
+            }
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Earth's radius in km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        // Close dropdown when clicking outside
         document.addEventListener('click', function(event) {
             const searchInput = document.getElementById('countrySearch');
             const listDiv = document.getElementById('countryList');
@@ -330,27 +845,23 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 const img = new Image();
-                img.crossOrigin = "anonymous";
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
                     
-                    // Set optimal size for medical imaging (768x768 for better model accuracy)
-                    const optimalSize = 768;
+                    const maxSize = 800;
                     let width = img.width;
                     let height = img.height;
                     
-                    // Maintain aspect ratio while fitting to optimal size
-                    const aspectRatio = width / height;
                     if (width > height) {
-                        if (width > optimalSize) {
-                            width = optimalSize;
-                            height = Math.round(optimalSize / aspectRatio);
+                        if (width > maxSize) {
+                            height *= maxSize / width;
+                            width = maxSize;
                         }
                     } else {
-                        if (height > optimalSize) {
-                            height = optimalSize;
-                            width = Math.round(optimalSize * aspectRatio);
+                        if (height > maxSize) {
+                            width *= maxSize / height;
+                            height = maxSize;
                         }
                     }
                     
@@ -358,11 +869,8 @@
                     canvas.height = height;
                     ctx.drawImage(img, 0, 0, width, height);
                     
-                    const resizedImage = canvas.toDataURL('image/jpeg', 0.95);
+                    const resizedImage = canvas.toDataURL('image/jpeg', 0.9);
                     document.getElementById('uploadedImage').src = resizedImage;
-                    
-                    document.getElementById('imageDimensions').textContent = `${width}x${height}px (Original: ${img.width}x${img.height}px)`;
-                    
                     document.getElementById('imagePreview').classList.remove('hidden');
                 };
                 img.src = e.target.result;
@@ -376,29 +884,15 @@
                 return;
             }
 
-            // Show loading spinner
-            document.getElementById('loadingSpinner').classList.remove('hidden');
-            document.getElementById('resultsSection').classList.add('hidden');
-            document.getElementById('predictions').innerHTML = '';
-
-            try {
-                const image = document.getElementById('uploadedImage');
-                const prediction = await model.predict(image);
-                displayResults(prediction);
-            } catch (error) {
-                console.error('Error during analysis:', error);
-                alert('Error analyzing image. Please try again.');
-                document.getElementById('loadingSpinner').classList.add('hidden');
-            }
+            const image = document.getElementById('uploadedImage');
+            const prediction = await model.predict(image);
+            
+            displayResults(prediction);
         }
 
         function displayResults(predictions) {
             const resultsSection = document.getElementById('resultsSection');
             const predictionsDiv = document.getElementById('predictions');
-            const loadingSpinner = document.getElementById('loadingSpinner');
-            
-            // Hide loading spinner
-            loadingSpinner.classList.add('hidden');
             
             resultsSection.classList.remove('hidden');
             
@@ -406,15 +900,13 @@
             
             predictionsDiv.innerHTML = sortedPredictions.map(pred => {
                 const percentage = (pred.probability * 100).toFixed(2);
-                const isPneumonia = pred.className.toLowerCase().includes('pneumonia');
-                const textColor = isPneumonia ? 'text-red-600' : 'text-blue-600';
-                const barColor = isPneumonia ? 'bg-red-500' : 'bg-blue-500';
+                const barColor = pred.probability > 0.5 ? 'bg-red-500' : 'bg-blue-500';
                 
                 return `
                     <div class="space-y-2">
                         <div class="flex justify-between items-center">
                             <span class="font-semibold text-gray-800">${pred.className}</span>
-                            <span class="text-lg font-bold ${textColor}">${percentage}%</span>
+                            <span class="text-lg font-bold ${pred.probability > 0.5 ? 'text-red-600' : 'text-blue-600'}">${percentage}%</span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
                             <div class="${barColor} h-4 rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
